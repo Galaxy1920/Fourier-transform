@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Uploader from './components/Uploader';
 import Visualizer from './components/Visualizer';
 import Controller from './components/Controller';
@@ -18,6 +18,32 @@ function App() {
   const [audioUrl, setAudioUrl] = useState(null);
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const totalFramesRef = useRef(0);
+  const pcmDataRef = useRef(null);
+  const sampleRateRef = useRef(44100);
+
+  // Keep refs in sync so timeupdate handler always has fresh values
+  useEffect(() => { totalFramesRef.current = totalFrames; }, [totalFrames]);
+  useEffect(() => { pcmDataRef.current = pcmData; }, [pcmData]);
+  useEffect(() => { sampleRateRef.current = sampleRate; }, [sampleRate]);
+
+  // Sync frame index with audio playback position in real time
+  const handleTimeUpdate = useCallback(() => {
+    if (!audioRef.current || !pcmDataRef.current) return;
+    const currentTime = audioRef.current.currentTime;
+    const totalDuration = pcmDataRef.current.length / sampleRateRef.current;
+    const progress = Math.min(currentTime / totalDuration, 1);
+    const frameIdx = Math.floor(progress * totalFramesRef.current);
+    setCurrentFrameIdx(Math.min(frameIdx, totalFramesRef.current - 1));
+  }, []);
+
+  // Register/unregister timeupdate listener whenever audioUrl changes
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
+  }, [audioUrl, handleTimeUpdate]);
 
   const handleFileSelected = async (file) => {
       setIsLoading(true);
@@ -53,6 +79,16 @@ function App() {
     setStep(-1);
     setCurrentFrameIdx(0);
     setTotalFrames(0);
+  };
+
+  // Stop: pause + rewind to beginning
+  const handleStop = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setIsPlaying(false);
+    setCurrentFrameIdx(0);
   };
 
   return (
@@ -99,6 +135,7 @@ function App() {
               currentFrameIdx={currentFrameIdx}
               setCurrentFrameIdx={setCurrentFrameIdx}
               onReset={handleReset}
+              onStop={handleStop}
               isPlaying={isPlaying}
               togglePlay={() => {
                 if (audioRef.current) {

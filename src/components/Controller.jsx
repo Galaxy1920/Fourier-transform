@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, ArrowLeft, RefreshCw, Play, Pause } from 'lucide-react';
+import { ArrowRight, ArrowLeft, RefreshCw, Play, Pause, Square } from 'lucide-react';
 import './Controller.css';
 
 const steps = [
@@ -11,12 +11,10 @@ const steps = [
   { id: 5, title: '6. 전체 스펙트로그램', desc: '모든 프레임에 대해 위 과정을 반복하고 오버랩하여 시간-주파수 스펙트로그램을 완성합니다.' }
 ];
 
-const Controller = ({ step, setStep, totalFrames, currentFrameIdx, setCurrentFrameIdx, onReset, isPlaying, togglePlay }) => {
+const Controller = ({ step, setStep, totalFrames, currentFrameIdx, setCurrentFrameIdx, onReset, onStop, isPlaying, togglePlay }) => {
   const handleNext = () => {
     if (step < 5) {
       setStep(step + 1);
-    } else if (step === 5) {
-      // Loop or nothing
     }
   };
 
@@ -48,23 +46,32 @@ const Controller = ({ step, setStep, totalFrames, currentFrameIdx, setCurrentFra
       </div>
 
       <div className="controls">
-        {(step === 0 || step === 5) && (
-          <button 
-            className="primary-button icon-btn" 
-            style={{ backgroundColor: isPlaying ? '#ef4444' : '#22c55e', boxShadow: 'none', marginRight: 'auto' }}
-            onClick={togglePlay}
-          >
-            {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-            {isPlaying ? '정지 (Pause)' : '재생 (Play)'}
-          </button>
-        )}
+        {/* 재생/일시정지 버튼 — 모든 단계 */}
+        <button 
+          className="primary-button icon-btn play-btn" 
+          style={{ backgroundColor: isPlaying ? '#f59e0b' : '#22c55e' }}
+          onClick={togglePlay}
+        >
+          {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+          {isPlaying ? '일시정지' : '재생'}
+        </button>
+
+        {/* 정지 버튼 — 모든 단계 */}
+        <button
+          className="glass-button icon-btn stop-btn"
+          onClick={onStop}
+          title="정지 및 처음부터"
+        >
+          <Square size={18} />
+          정지
+        </button>
 
         <button 
           className="glass-button icon-btn" 
           onClick={handlePrev} 
           disabled={step === 0}
         >
-          <ArrowLeft size={18} /> 이전 (Prev)
+          <ArrowLeft size={18} /> 이전
         </button>
         
         <button 
@@ -72,7 +79,7 @@ const Controller = ({ step, setStep, totalFrames, currentFrameIdx, setCurrentFra
           onClick={handleNext} 
           disabled={step === 5}
         >
-          다음 (Next) <ArrowRight size={18} />
+          다음 <ArrowRight size={18} />
         </button>
         
         <button className="glass-button icon-btn outline" onClick={onReset}>

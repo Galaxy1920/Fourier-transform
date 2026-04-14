@@ -41,7 +41,27 @@
 .controls {
   display: flex;
   justify-content: center;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.play-btn {
+  box-shadow: none;
+  min-width: 100px;
+}
+
+.stop-btn {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #f87171;
+  transition: all 0.2s ease;
+}
+
+.stop-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+  color: #fff;
 }
 
 .icon-btn {

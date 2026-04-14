@@ -26,7 +26,7 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
     }
   }, [step, pcmData, computedSpectrogram, sampleRate]);
 
-  // Playhead overlay effect
+  // ─── Playhead overlay (all steps) ────────────────────────────────────────
   useEffect(() => {
     const canvas = overlayCanvasRef.current;
     if (!canvas || !pcmData) return;
@@ -39,28 +39,21 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
     const renderPlayhead = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Only draw during step 0 (waveform) or step 5 (spectrogram) and when audioRef is there
-      if ((step === 0 || step === 5) && audioRef && audioRef.current) {
+      if (audioRef && audioRef.current) {
         const currentTime = audioRef.current.currentTime;
-        const totalTimeDisplayed = pcmData.length / sampleRate;
+        const totalDuration = pcmData.length / sampleRate;
 
-        // If current time is within our visualization window bounds
-        if (currentTime <= totalTimeDisplayed) {
-          const x = (currentTime / totalTimeDisplayed) * width;
-          
-          ctx.beginPath();
-          ctx.strokeStyle = '#22c55e'; // green playhead
-          ctx.lineWidth = 2;
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, height);
-          ctx.stroke();
-          
-          ctx.beginPath();
-          ctx.fillStyle = '#22c55e';
-          ctx.moveTo(x - 6, 0);
-          ctx.lineTo(x + 6, 0);
-          ctx.lineTo(x, 8);
-          ctx.fill();
+        if (currentTime <= totalDuration) {
+          // For step 0 and step 5: full-width playhead over the full signal/spectrogram
+          if (step === 0 || step === 5) {
+            const x = (currentTime / totalDuration) * width;
+            drawVerticalPlayhead(ctx, x, height);
+          }
+          // For steps 1–4: playhead on waveform shows current frame position
+          else if (step >= 1 && step <= 4) {
+            const x = (currentTime / totalDuration) * width;
+            drawVerticalPlayhead(ctx, x, height);
+          }
         }
       }
 
@@ -74,6 +67,23 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
     };
   }, [step, pcmData, sampleRate, audioRef]);
 
+  function drawVerticalPlayhead(ctx, x, height) {
+    ctx.beginPath();
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 2;
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.fillStyle = '#22c55e';
+    ctx.moveTo(x - 6, 0);
+    ctx.lineTo(x + 6, 0);
+    ctx.lineTo(x, 8);
+    ctx.fill();
+  }
+
+  // ─── Main canvas draw ─────────────────────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !pcmData) return;
@@ -81,13 +91,11 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
     const width = canvas.width;
     const height = canvas.height;
 
-    // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
     const frameStart = currentFrameIdx * HOP_SIZE;
     const frameEnd = frameStart + FFT_SIZE;
 
-    // Helper to draw waveform
     const drawWaveform = (data, color, xOffset = 0, targetWidth = width) => {
       ctx.beginPath();
       ctx.strokeStyle = color;
@@ -107,11 +115,9 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
     };
 
     if (step === 0 || step === 1) {
-      // Draw full waveform
       drawWaveform(pcmData, 'rgba(161, 161, 170, 0.4)');
       
       if (step === 1 && frameEnd <= pcmData.length) {
-        // Highlight current frame
         const xStart = (frameStart / pcmData.length) * width;
         const xEnd = (frameEnd / pcmData.length) * width;
         
@@ -127,17 +133,19 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
         ctx.fillText('2048 Samples Frame', xStart + 5, 20);
       }
     } else if (step === 2) {
-      // Show windowing
       if (frameEnd > pcmData.length) return;
       const frame = pcmData.slice(frameStart, frameEnd);
       const windowed = applyHannWindow(frame);
 
-      // Draw original frame in background
-      drawWaveform(frame, 'rgba(161, 161, 170, 0.3)');
+      // Draw background waveform context (full waveform, faded)
+      drawWaveform(pcmData, 'rgba(161, 161, 170, 0.15)');
 
-      // Draw Hann curve overlay
+      // Current frame original
+      drawWaveform(frame, 'rgba(161, 161, 170, 0.5)');
+
+      // Hann window curve
       ctx.beginPath();
-      ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)'; // red for window curve
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
       ctx.lineWidth = 2;
       ctx.setLineDash([5, 5]);
       for (let i = 0; i < width; i++) {
@@ -150,7 +158,7 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Draw windowed frame
+      // Windowed result
       drawWaveform(windowed, '#22c55e');
 
       ctx.fillStyle = '#fff';
@@ -164,20 +172,16 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
       const logMags = convertToLogScale(mags, 512, sampleRate);
 
       if (step === 3) {
-        // Draw logarithmic frequency spectrum
         ctx.fillStyle = '#1e202d';
         ctx.fillRect(0, 0, width, height);
 
         const barWidth = width / logMags.length;
         
         for (let i = 0; i < logMags.length; i++) {
-          const val = logMags[i]; // 0 to 1
+          const val = logMags[i];
           const barHeight = val * height;
-          
-          // Color gradient based on frequency
-          const hue = 240 - (i / logMags.length) * 240; // Blue to Red
+          const hue = 240 - (i / logMags.length) * 240;
           ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
-          
           ctx.fillRect(i * barWidth, height - barHeight, Math.max(1, barWidth - 0.5), barHeight);
         }
 
@@ -185,12 +189,11 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
         ctx.font = '16px Outfit';
         ctx.fillText('FFT Output (Log Frequency Axis)', 10, 20);
       } else if (step === 4) {
-        // Show conversion to single slice
         const centerX = width / 2;
         
         for (let i = 0; i < logMags.length; i++) {
           const val = logMags[i];
-          const hue = 240 - (val * 240); // Intensity mapping
+          const hue = 240 - (val * 240);
           ctx.fillStyle = val > 0.05 ? `hsl(${hue}, 100%, ${val * 50}%)` : '#000';
           
           const y = height - (i / logMags.length) * height;
@@ -200,10 +203,9 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
         ctx.fillStyle = '#fff';
         ctx.font = '16px Outfit';
         ctx.textAlign = 'center';
-        ctx.fillText('Transform to Spectrogram Slice Y-Axis: Frequency, Color: Intensity', width / 2, 20);
+        ctx.fillText('Transform to Spectrogram Slice  Y-Axis: Frequency, Color: Intensity', width / 2, 20);
         ctx.textAlign = 'left';
 
-        // Arrows and context
         ctx.strokeStyle = 'rgba(255,255,255,0.2)';
         ctx.beginPath();
         ctx.moveTo(centerX + 30, height / 2);
@@ -229,7 +231,6 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
           const val = slice[y];
           const hue = 240 - (val * 240);
           ctx.fillStyle = val > 0.05 ? `hsl(${hue}, 100%, ${val * 50}%)` : '#000';
-          // Draw bottom-up mapping
           ctx.fillRect(x * sliceWidth, height - (y * sliceHeight) - sliceHeight, sliceWidth + 0.5, sliceHeight + 0.5);
         }
       }
