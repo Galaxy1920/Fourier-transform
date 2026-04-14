@@ -1,0 +1,71 @@
+.controller-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.step-info {
+  text-align: center;
+}
+
+.step-title {
+  font-size: 1.5rem;
+  color: var(--accent-primary);
+  margin-bottom: 0.5rem;
+}
+
+.step-desc {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.frame-controls {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.frame-slider {
+  width: 200px;
+  accent-color: var(--accent-secondary);
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progress-bar {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+.progress-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.progress-dot.active {
+  background: var(--accent-primary);
+  box-shadow: 0 0 10px var(--accent-primary);
+}
