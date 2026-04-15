@@ -7,24 +7,121 @@ const HOP_SIZE = 1024; // 50% overlap
 const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) => {
   const canvasRef = useRef(null);
   const overlayCanvasRef = useRef(null);
+  const cachedCanvasRef = useRef(null);
   const [computedSpectrogram, setComputedSpectrogram] = useState(null);
+  const [isComputing, setIsComputing] = useState(false);
+  const [computingProgress, setComputingProgress] = useState(0);
 
+  // Precompute full spectrogram for step 5 in chunks to avoid UI freeze
   useEffect(() => {
-    // Precompute full spectrogram for step 5
-    if (step === 5 && pcmData && !computedSpectrogram) {
+    if (step === 5 && pcmData && !computedSpectrogram && !isComputing) {
       const numFrames = Math.floor((pcmData.length - FFT_SIZE) / HOP_SIZE);
       const specs = [];
-      for (let i = 0; i < numFrames; i++) {
-        const start = i * HOP_SIZE;
-        const frame = pcmData.slice(start, start + FFT_SIZE);
-        const windowed = applyHannWindow(frame);
-        const mags = performFFT(windowed);
-        const logMags = convertToLogScale(mags, 512, sampleRate);
-        specs.push(logMags);
-      }
-      setComputedSpectrogram(specs);
+      setIsComputing(true);
+      setComputingProgress(0);
+
+      const CHUNK_SIZE = 50;
+      let currentIdx = 0;
+
+      const computeChunk = () => {
+        const nextEnd = Math.min(currentIdx + CHUNK_SIZE, numFrames);
+        for (let i = currentIdx; i < nextEnd; i++) {
+          const start = i * HOP_SIZE;
+          const frame = pcmData.slice(start, start + FFT_SIZE);
+          const windowed = applyHannWindow(frame);
+          const mags = performFFT(windowed);
+          const logMags = convertToLogScale(mags, 512, sampleRate);
+          specs.push(logMags);
+        }
+
+        currentIdx = nextEnd;
+        setComputingProgress(Math.floor((currentIdx / numFrames) * 100));
+
+        if (currentIdx < numFrames) {
+          setTimeout(computeChunk, 0);
+        } else {
+          setComputedSpectrogram(specs);
+          setIsComputing(false);
+        }
+      };
+
+      computeChunk();
     }
-  }, [step, pcmData, computedSpectrogram, sampleRate]);
+  }, [step, pcmData, computedSpectrogram, isComputing, sampleRate]);
+
+  // Render spectrogram to cached canvas once computation is done
+  useEffect(() => {
+    if (computedSpectrogram && !cachedCanvasRef.current) {
+      const numSlices = computedSpectrogram.length;
+      const numBins = computedSpectrogram[0].length;
+      
+      const offscreen = document.createElement('canvas');
+      offscreen.width = 800;
+      offscreen.height = 400;
+      const offCtx = offscreen.getContext('2d');
+      
+      const width = offscreen.width;
+      const height = offscreen.height;
+      const sliceWidth = width / numSlices;
+      const sliceHeight = height / numBins;
+
+      // Use ImageData for high performance pixel manipulation
+      const imageData = offCtx.createImageData(width, height);
+      const data = imageData.data;
+
+      const hslToRgb = (h, s, l) => {
+        let r, g, b;
+        if (s === 0) {
+          r = g = b = l; // achromatic
+        } else {
+          const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+          const p = 2 * l - q;
+          const hue2rgb = (t) => {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1/6) return p + (q - p) * 6 * t;
+            if (t < 1/2) return q;
+            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+          };
+          r = hue2rgb(h + 1/3);
+          g = hue2rgb(h);
+          b = hue2rgb(h - 1/3);
+        }
+        return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+      };
+
+      for (let x = 0; x < width; x++) {
+        const sliceIdx = Math.floor((x / width) * numSlices);
+        const slice = computedSpectrogram[sliceIdx];
+        
+        for (let y = 0; y < height; y++) {
+          const binIdx = Math.floor(((height - y) / height) * numBins);
+          const val = slice[binIdx];
+          
+          const idx = (y * width + x) * 4;
+          if (val > 0.05) {
+            // Match Step 5: hsl(${240 - val * 240}, 100%, ${val * 50}%)
+            const h = (240 - val * 240) / 360;
+            const [r, g, b] = hslToRgb(h, 1, val * 0.5);
+            
+            data[idx] = r;
+            data[idx+1] = g;
+            data[idx+2] = b;
+            data[idx+3] = 255;
+          } else {
+            data[idx] = 0;
+            data[idx+1] = 0;
+            data[idx+2] = 0;
+            data[idx+3] = 255;
+          }
+        }
+      }
+      
+      offCtx.putImageData(imageData, 0, 0);
+      cachedCanvasRef.current = offscreen;
+    }
+  }, [computedSpectrogram]);
 
   // Playhead overlay effect
   useEffect(() => {
@@ -39,12 +136,11 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
     const renderPlayhead = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Only draw during step 0 (waveform) or step 5 (spectrogram) and when audioRef is there
-      if ((step === 0 || step === 5) && audioRef && audioRef.current) {
+      // Draw playhead in steps where full horizontal scale is used
+      if ((step === 0 || step === 1 || step === 5) && audioRef && audioRef.current && pcmData) {
         const currentTime = audioRef.current.currentTime;
         const totalTimeDisplayed = pcmData.length / sampleRate;
 
-        // If current time is within our visualization window bounds
         if (currentTime <= totalTimeDisplayed) {
           const x = (currentTime / totalTimeDisplayed) * width;
           
@@ -74,18 +170,13 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
     };
   }, [step, pcmData, sampleRate, audioRef]);
 
+  // Main canvas rendering effect
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !pcmData) return;
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
     const height = canvas.height;
-
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
-
-    const frameStart = currentFrameIdx * HOP_SIZE;
-    const frameEnd = frameStart + FFT_SIZE;
 
     // Helper to draw waveform
     const drawWaveform = (data, color, xOffset = 0, targetWidth = width) => {
@@ -105,6 +196,28 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
       }
       ctx.stroke();
     };
+
+    // Optimization: If in Step 5 and we have a cached spectrogram, just draw it
+    if (step === 5 && cachedCanvasRef.current) {
+      ctx.clearRect(0, 0, width, height);
+      ctx.drawImage(cachedCanvasRef.current, 0, 0);
+      ctx.fillStyle = '#fff';
+      ctx.font = '16px Outfit';
+      ctx.fillText(`Full Spectrogram (${computedSpectrogram?.length} frames)`, 10, 20);
+      return;
+    } else if (step === 5) {
+      // Still computing
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#fff';
+      ctx.font = '16px Outfit';
+      ctx.fillText(`Computing Spectrogram... ${computingProgress}%`, 10, 30);
+      return;
+    }
+
+    // Standard drawing for other steps
+    ctx.clearRect(0, 0, width, height);
+    const frameStart = currentFrameIdx * HOP_SIZE;
+    const frameEnd = frameStart + FFT_SIZE;
 
     if (step === 0 || step === 1) {
       // Draw full waveform
@@ -210,38 +323,19 @@ const Visualizer = ({ pcmData, step, currentFrameIdx, sampleRate, audioRef }) =>
         ctx.lineTo(centerX + 80, height / 2);
         ctx.stroke();
       }
-    } else if (step === 5) {
-      if (!computedSpectrogram) {
-        ctx.fillStyle = '#fff';
-        ctx.font = '16px Outfit';
-        ctx.fillText('Computing Spectrogram...', 10, 30);
-        return;
-      }
-
-      const numSlices = computedSpectrogram.length;
-      const sliceWidth = width / numSlices;
-      const numBins = computedSpectrogram[0].length;
-      const sliceHeight = height / numBins;
-
-      for (let x = 0; x < numSlices; x++) {
-        const slice = computedSpectrogram[x];
-        for (let y = 0; y < numBins; y++) {
-          const val = slice[y];
-          const hue = 240 - (val * 240);
-          ctx.fillStyle = val > 0.05 ? `hsl(${hue}, 100%, ${val * 50}%)` : '#000';
-          // Draw bottom-up mapping
-          ctx.fillRect(x * sliceWidth, height - (y * sliceHeight) - sliceHeight, sliceWidth + 0.5, sliceHeight + 0.5);
-        }
-      }
-      
-      ctx.fillStyle = '#fff';
-      ctx.font = '16px Outfit';
-      ctx.fillText(`Full Spectrogram (${numSlices} frames)`, 10, 20);
     }
-  }, [pcmData, step, currentFrameIdx, sampleRate, computedSpectrogram]);
+  }, [pcmData, step, currentFrameIdx, sampleRate, computedSpectrogram, computingProgress]);
 
   return (
     <div className="visualizer-container glass-panel fade-in">
+      {isComputing && (
+        <div className="computing-overlay">
+          <div className="progress-container">
+            <div className="progress-bar-fill" style={{ width: `${computingProgress}%` }}></div>
+            <span className="progress-text">Analyzing Audio: {computingProgress}%</span>
+          </div>
+        </div>
+      )}
       <div style={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
         <canvas 
           ref={canvasRef} 

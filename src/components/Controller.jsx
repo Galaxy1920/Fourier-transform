@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, ArrowLeft, RefreshCw, Play, Pause } from 'lucide-react';
+import { ArrowRight, ArrowLeft, RefreshCw, Play, Pause, Square } from 'lucide-react';
 import './Controller.css';
 
 const steps = [
@@ -11,7 +11,7 @@ const steps = [
   { id: 5, title: '6. 전체 스펙트로그램', desc: '모든 프레임에 대해 위 과정을 반복하고 오버랩하여 시간-주파수 스펙트로그램을 완성합니다.' }
 ];
 
-const Controller = ({ step, setStep, totalFrames, currentFrameIdx, setCurrentFrameIdx, onReset, isPlaying, togglePlay }) => {
+const Controller = ({ step, setStep, totalFrames, currentFrameIdx, setCurrentFrameIdx, onReset, onStop, isPlaying, togglePlay }) => {
   const handleNext = () => {
     if (step < 5) {
       setStep(step + 1);
@@ -31,16 +31,16 @@ const Controller = ({ step, setStep, totalFrames, currentFrameIdx, setCurrentFra
       <div className="step-info">
         <h2 className="step-title">{steps[step].title}</h2>
         <p className="step-desc">{steps[step].desc}</p>
-        
+
         {(step > 0 && step < 5) && (
           <div className="frame-controls">
             <span>Frame: {currentFrameIdx} / {totalFrames}</span>
-            <input 
-              type="range" 
-              min="0" 
-              max={Math.max(0, totalFrames - 1)} 
-              value={currentFrameIdx} 
-              onChange={(e) => setCurrentFrameIdx(Number(e.target.value))} 
+            <input
+              type="range"
+              min="0"
+              max={Math.max(0, totalFrames - 1)}
+              value={currentFrameIdx}
+              onChange={(e) => setCurrentFrameIdx(Number(e.target.value))}
               className="frame-slider"
             />
           </div>
@@ -48,35 +48,42 @@ const Controller = ({ step, setStep, totalFrames, currentFrameIdx, setCurrentFra
       </div>
 
       <div className="controls">
-        {(step === 0 || step === 5) && (
-          <button 
-            className="primary-button icon-btn" 
-            style={{ backgroundColor: isPlaying ? '#ef4444' : '#22c55e', boxShadow: 'none', marginRight: 'auto' }}
+        <div className="playback-group">
+          <button
+            className="primary-button icon-btn"
+            style={{ backgroundColor: isPlaying ? '#ef4444' : '#22c55e' }}
             onClick={togglePlay}
           >
             {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-            {isPlaying ? '정지 (Pause)' : '재생 (Play)'}
+            {isPlaying ? '일시정지' : '재생 (Play)'}
           </button>
-        )}
+          
+          <button
+            className="glass-button icon-btn stop-btn"
+            onClick={onStop}
+          >
+            <Square size={18} fill="#ef4444" /> 정지
+          </button>
+        </div>
 
-        <button 
-          className="glass-button icon-btn" 
-          onClick={handlePrev} 
+        <button
+          className="glass-button icon-btn"
+          onClick={handlePrev}
           disabled={step === 0}
         >
-          <ArrowLeft size={18} /> 이전 (Prev)
+          <ArrowLeft size={18} /> 이전
         </button>
-        
-        <button 
-          className="primary-button icon-btn" 
-          onClick={handleNext} 
+
+        <button
+          className="primary-button icon-btn"
+          onClick={handleNext}
           disabled={step === 5}
         >
-          다음 (Next) <ArrowRight size={18} />
+          다음 <ArrowRight size={18} />
         </button>
-        
+
         <button className="glass-button icon-btn outline" onClick={onReset}>
-          <RefreshCw size={18} /> 처음으로
+          <RefreshCw size={18} /> 초기화
         </button>
       </div>
 

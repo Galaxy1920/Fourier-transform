@@ -55,6 +55,39 @@ function App() {
     setTotalFrames(0);
   };
 
+  const handleStop = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setIsPlaying(false);
+    setCurrentFrameIdx(0);
+  };
+
+  // Sync currentFrameIdx with audio currentTime when playing
+  React.useEffect(() => {
+    let animationId;
+    
+    const syncFrame = () => {
+      if (isPlaying && audioRef.current && pcmData) {
+        const currentTime = audioRef.current.currentTime;
+        const frameIdx = Math.floor((currentTime * sampleRate) / HOP_SIZE);
+        if (frameIdx !== currentFrameIdx && frameIdx < totalFrames) {
+          setCurrentFrameIdx(frameIdx);
+        }
+      }
+      animationId = requestAnimationFrame(syncFrame);
+    };
+
+    if (isPlaying) {
+      animationId = requestAnimationFrame(syncFrame);
+    }
+
+    return () => {
+      if (animationId) cancelAnimationFrame(animationId);
+    };
+  }, [isPlaying, sampleRate, totalFrames, currentFrameIdx, pcmData]);
+
   return (
     <div className="app-container">
       {audioUrl && (
@@ -63,7 +96,10 @@ function App() {
           src={audioUrl} 
           onPlay={() => setIsPlaying(true)} 
           onPause={() => setIsPlaying(false)} 
-          onEnded={() => setIsPlaying(false)}
+          onEnded={() => {
+            setIsPlaying(false);
+            setCurrentFrameIdx(0);
+          }}
         />
       )}
       <header className="header fade-in">
@@ -97,8 +133,14 @@ function App() {
               setStep={setStep} 
               totalFrames={totalFrames}
               currentFrameIdx={currentFrameIdx}
-              setCurrentFrameIdx={setCurrentFrameIdx}
+              setCurrentFrameIdx={(idx) => {
+                setCurrentFrameIdx(idx);
+                if (audioRef.current) {
+                  audioRef.current.currentTime = (idx * HOP_SIZE) / sampleRate;
+                }
+              }}
               onReset={handleReset}
+              onStop={handleStop}
               isPlaying={isPlaying}
               togglePlay={() => {
                 if (audioRef.current) {

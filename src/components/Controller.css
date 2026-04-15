@@ -69,3 +69,25 @@
   background: var(--accent-primary);
   box-shadow: 0 0 10px var(--accent-primary);
 }
+
+.playback-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-right: auto;
+}
+
+.playback-group .primary-button {
+  min-width: 130px;
+  justify-content: center;
+}
+
+.stop-btn {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
+  color: #ef4444 !important;
+}
+
+.stop-btn:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
