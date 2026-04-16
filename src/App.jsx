@@ -20,18 +20,18 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const handleFileSelected = async (file) => {
-      setIsLoading(true);
-      try {
-        const url = URL.createObjectURL(file);
-        setAudioUrl(url);
+    setIsLoading(true);
+    try {
+      const url = URL.createObjectURL(file);
+      setAudioUrl(url);
 
-        const { pcmData: data, sampleRate: rate } = await processAudioFile(file);
-        setPcmData(data);
+      const { pcmData: data, sampleRate: rate } = await processAudioFile(file);
+      setPcmData(data);
       setSampleRate(rate);
-      
+
       const frames = Math.floor((data.length - FFT_SIZE) / HOP_SIZE);
       setTotalFrames(frames);
-      
+
       setStep(0);
       setCurrentFrameIdx(0);
     } catch (err) {
@@ -67,7 +67,7 @@ function App() {
   // Sync currentFrameIdx with audio currentTime when playing
   React.useEffect(() => {
     let animationId;
-    
+
     const syncFrame = () => {
       if (isPlaying && audioRef.current && pcmData) {
         const currentTime = audioRef.current.currentTime;
@@ -91,11 +91,11 @@ function App() {
   return (
     <div className="app-container">
       {audioUrl && (
-        <audio 
-          ref={audioRef} 
-          src={audioUrl} 
-          onPlay={() => setIsPlaying(true)} 
-          onPause={() => setIsPlaying(false)} 
+        <audio
+          ref={audioRef}
+          src={audioUrl}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
           onEnded={() => {
             setIsPlaying(false);
             setCurrentFrameIdx(0);
@@ -105,9 +105,9 @@ function App() {
       <header className="header fade-in">
         <h1 className="title">
           <Activity size={40} style={{ display: 'inline', marginRight: '10px', verticalAlign: 'text-bottom' }} />
-          STFT Visualizer
+          스펙트로그램 생성
         </h1>
-        <p className="subtitle">Learn Fourier Transform Step-by-Step with Log Scale & Hann Window</p>
+        <p className="subtitle">음원의 스펙트로그램의 생성 과정을 푸리에 변환을 활용하여 단계적으로 알아보자</p>
       </header>
 
       <main>
@@ -121,16 +121,16 @@ function App() {
           )
         ) : (
           <div className="visualization-area fade-in">
-            <Visualizer 
-              pcmData={pcmData} 
-              step={step} 
-              currentFrameIdx={currentFrameIdx} 
-              sampleRate={sampleRate} 
+            <Visualizer
+              pcmData={pcmData}
+              step={step}
+              currentFrameIdx={currentFrameIdx}
+              sampleRate={sampleRate}
               audioRef={audioRef}
             />
-            <Controller 
-              step={step} 
-              setStep={setStep} 
+            <Controller
+              step={step}
+              setStep={setStep}
               totalFrames={totalFrames}
               currentFrameIdx={currentFrameIdx}
               setCurrentFrameIdx={(idx) => {
