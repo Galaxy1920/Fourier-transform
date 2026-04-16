@@ -114,7 +114,7 @@ function App() {
         {step === -1 ? (
           isLoading ? (
             <div className="uploader-container">
-              <h2 className="title" style={{ fontSize: '2rem' }}>Processing Audio...</h2>
+              <h2 className="title" style={{ fontSize: '2rem' }}>음원 처리중...</h2>
             </div>
           ) : (
             <Uploader onFileSelected={handleFileSelected} />
