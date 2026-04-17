@@ -1,7 +1,7 @@
 # 🔬 [물리학 II 탐구 활동] 음성 신호의 분석과 푸리에 변환
 
 ## 시작 전 주의
-모든 코드는 Antigravity의 Gemini 3.1 Pro (High) 및 Gemini 3 Flash 모델을 활용하여 바이브 코딩한 것이며, README.md는 Gemini CLI를 통해 작성되었습니다.
+이 레포 전체를 통틀어서 이 목차만 제가 직접 작성한 부분입니다. 모든 코드는 Antigravity의 Gemini 3.1 Pro (High) 및 Gemini 3 Flash 모델을 활용하여 바이브 코딩한 것이며, README.md는 Gemini CLI를 통해 작성되었습니다. 제작 목적은 물리학II 과목의 주제 탐구 발표에서 사용하기 위함입니다. 해당 목차는 Branch를 통해 공개되어있습니다. https://galaxy1920.github.io/Fourier-transform
 
 ## 1. 프로젝트 개요
 이 프로그램은 우리가 일상에서 듣는 '소리(음성 신호)'를 수학적, 물리적으로 분석하여 시각화해주는 STFT(Short-Time Fourier Transform) 시각화 도구입니다. 복잡한 파동인 소리를 단순한 사인파들의 합으로 분해하는 과정을 단계별로 체험할 수 있습니다.
