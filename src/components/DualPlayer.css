@@ -1,0 +1,238 @@
+.dual-player-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+  width: 100%;
+}
+
+.dp-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  width: 100%;
+  max-width: 1400px;
+}
+
+.dp-drop-zone {
+  width: 380px;
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  cursor: pointer;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  background: rgba(30, 32, 45, 0.6);
+}
+
+.dp-drop-zone:hover {
+  background: rgba(30, 32, 45, 0.9);
+  border-color: var(--accent-primary);
+}
+
+.dp-drop-zone.dragging {
+  border-color: var(--accent-secondary);
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.dp-drop-zone.has-file {
+  border-color: var(--success);
+}
+
+.volume-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.channel-label {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.volume-fader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 90px;
+  height: 420px;
+  background: #1e202d;
+  border-radius: 12px;
+  padding: 20px 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.fader-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  color: #a1a1aa;
+}
+
+.fader-title {
+  margin-bottom: 4px;
+}
+
+.fader-value {
+  font-weight: 600;
+  color: #f5f5f7;
+}
+
+.fader-body {
+  display: flex;
+  flex-direction: row;
+  height: 320px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.slider-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 30px;
+  height: 320px;
+}
+
+.vertical-slider {
+  -webkit-appearance: none;
+  width: 320px;
+  height: 8px;
+  background: #3f3f46;
+  border-radius: 4px;
+  outline: none;
+  transform: rotate(-90deg);
+}
+
+.vertical-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 32px;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.vu-meter {
+  position: relative;
+  width: 12px;
+  height: 320px;
+  background: #0a0a0d;
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  margin-left: 10px;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.vu-meter-bar {
+  width: 100%;
+  transition: height 0.05s ease, background-color 0.1s ease;
+}
+
+.vu-scale-container {
+  position: relative;
+  width: 24px;
+  height: 320px;
+}
+
+.vu-scale {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.vu-tick {
+  display: flex;
+  align-items: center;
+  height: 1px;
+}
+
+.vu-tick-line {
+  width: 5px;
+  height: 1px;
+  background: #52525b;
+}
+
+.vu-tick-label {
+  font-size: 0.65rem;
+  color: #a1a1aa;
+  margin-left: 4px;
+  line-height: 1px;
+  font-family: var(--font-body);
+}
+
+.fader-footer {
+  margin-top: auto;
+  color: #a1a1aa;
+  display: none; /* Hidden per user request */
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.dp-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  gap: 20px;
+}
+
+.play-btn {
+  background: #8b5cf6 !important;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4) !important;
+  width: 100%;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px !important;
+  font-size: 1.25rem !important;
+  border-radius: 14px !important;
+}
+
+.play-btn:hover {
+  background: #7c3aed !important;
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6) !important;
+}
+
+.stop-btn {
+  width: 100%;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #ef4444 !important;
+  padding: 18px !important;
+  font-size: 1.15rem !important;
+  border-radius: 14px !important;
+}
+
+.stop-btn:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
+}

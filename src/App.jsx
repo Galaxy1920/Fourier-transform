@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import Uploader from './components/Uploader';
 import Visualizer from './components/Visualizer';
 import Controller from './components/Controller';
+import DualPlayer from './components/DualPlayer';
 import { processAudioFile } from './utils/audioProcessing';
 import { FFT_SIZE } from './utils/fft';
 import { Activity } from 'lucide-react';
@@ -11,6 +12,7 @@ const HOP_SIZE = 1024; // 50% overlap
 function App() {
   const [pcmData, setPcmData] = useState(null);
   const [sampleRate, setSampleRate] = useState(44100);
+  const [viewMode, setViewMode] = useState('spectrogram'); // 'spectrogram' | 'dualPlayer'
   const [step, setStep] = useState(-1);
   const [currentFrameIdx, setCurrentFrameIdx] = useState(0);
   const [totalFrames, setTotalFrames] = useState(0);
@@ -103,15 +105,29 @@ function App() {
         />
       )}
       <header className="header fade-in">
-        <h1 className="title">
-          <Activity size={40} style={{ display: 'inline', marginRight: '10px', verticalAlign: 'text-bottom' }} />
-          스펙트로그램 생성
-        </h1>
-        <p className="subtitle">음원의 스펙트로그램의 생성 과정을 푸리에 변환을 활용하여 단계적으로 알아보자</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+          <h1 className="title" style={{ margin: 0 }}>
+            <Activity size={40} style={{ display: 'inline', marginRight: '10px', verticalAlign: 'text-bottom' }} />
+            {viewMode === 'spectrogram' ? '스펙트로그램 생성' : '음원 동시 재생기'}
+          </h1>
+          <button 
+            className="glass-button" 
+            style={{ padding: '8px 16px', fontSize: '0.9rem', whiteSpace: 'nowrap', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }}
+            onClick={() => setViewMode(viewMode === 'spectrogram' ? 'dualPlayer' : 'spectrogram')}
+          >
+            {viewMode === 'spectrogram' ? '음원 동시 재생기' : '스펙트로그램 생성으로 돌아가기'}
+          </button>
+        </div>
+        {viewMode === 'spectrogram' && (
+          <p className="subtitle" style={{ marginTop: '0.5rem' }}>음원의 스펙트로그램의 생성 과정을 푸리에 변환을 활용하여 단계적으로 알아보자</p>
+        )}
       </header>
 
       <main>
-        {step === -1 ? (
+        {viewMode === 'dualPlayer' ? (
+          <DualPlayer />
+        ) : (
+          step === -1 ? (
           isLoading ? (
             <div className="uploader-container">
               <h2 className="title" style={{ fontSize: '2rem' }}>음원 처리중...</h2>
@@ -153,7 +169,7 @@ function App() {
               }}
             />
           </div>
-        )}
+        ))}
       </main>
     </div>
   );
